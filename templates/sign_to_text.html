@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="text-center mb-4">🎥 حول الإشارة إلى نص</h2>
+    <p class="text-center text-muted mb-4">افتح الكاميرا وقم بالإشارة — سيتم تحويلها إلى نص تلقائيًا</p>
+
+    <!-- زر لتشغيل الكاميرا -->
+    <div class="text-center mb-3">
+        <button id="startBtn" class="btn btn-success btn-lg" onclick="startCamera()">
+            ابدأ التسجيل
+        </button>
+        <button id="stopBtn" class="btn btn-danger btn-lg d-none" onclick="stopCamera()">
+            إيقاف
+        </button>
+    </div>
+
+    <!-- عرض الكاميرا -->
+    <div class="text-center mb-4">
+        <video id="video" width="320" height="240" autoplay class="border rounded" style="max-width: 100%;"></video>
+    </div>
+
+    <!-- نتيجة التحويل -->
+    <div class="mb-4">
+        <label><strong>النص المُستنتج:</strong></label>
+        <div id="result" class="form-control" style="height: 100px; background: #f8f9fa;">
+            لم يتم التعرف على إشارة بعد...
+        </div>
+    </div>
+
+    <!-- حالة المعالجة -->
+    <div id="loading" class="text-center text-info d-none">
+        جاري التحليل...
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+<script>
+const video = document.getElementById('video');
+const resultDiv = document.getElementById('result');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const loadingDiv = document.getElementById('loading');
+
+let stream = null;
+let intervalId = null;
+
+// تشغيل الكاميرا
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        startBtn.classList.add('d-none');
+        stopBtn.classList.remove('d-none');
+
+        // كل 2 ثانية، نرسل إطار للتحليل
+        intervalId = setInterval(sendFrameForPrediction, 2000);
+    } catch (err) {
+        alert("فشل في الوصول للكاميرا: " + err.message);
+    }
+}
+
+// إيقاف الكاميرا
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    if (intervalId) clearInterval(intervalId);
+    startBtn.classList.remove('d-none');
+    stopBtn.classList.add('d-none');
+    loadingDiv.classList.add('d-none');
+}
+
+// إرسال إطار للتحليل
+async function sendFrameForPrediction() {
+    loadingDiv.classList.remove('d-none');
+
+    // تحويل الإطار إلى صورة
+    const canvas = document.createElement('canvas');
+    canvas.width = 224;
+    canvas.height = 224;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // تحويل إلى base64
+    const imageData = canvas.toDataURL('image/jpeg');
+
+    try {
+        const response = await fetch('/api/ai-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: imageData })
+        });
+
+        const data = await response.json();
+        if (data.text) {
+            resultDiv.textContent = data.text;
+        }
+    } catch (err) {
+        resultDiv.textContent = "خطأ في الاتصال بالذكاء الاصطناعي.";
+    } finally {
+        loadingDiv.classList.add('d-none');
+    }
+}
+</script>
+{% endblock %}

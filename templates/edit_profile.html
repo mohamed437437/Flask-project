@@ -1,0 +1,31 @@
+<!-- templates/edit_profile.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Edit Profile</h2>
+    
+    <img src="{{ image_file }}" alt="Profile Picture" width="100" style="border-radius: 50%; margin-bottom: 20px;">
+    
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control") }}
+        </div>
+        
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+        </div>
+        
+        <div class="mb-3">
+            {{ form.profile_image.label(class="form-label") }}
+            {{ form.profile_image(class="form-control") }}
+        </div>
+        
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+</div>
+{% endblock %}

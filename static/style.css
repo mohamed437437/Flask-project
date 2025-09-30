@@ -1,0 +1,161 @@
+/* --- تصفية وضبط عام للصفحة --- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    direction: rtl;
+    line-height: 1.6;
+}
+
+/* --- تمديد المحتوى وتحريك الفوتر للأسفل --- */
+.flex-grow {
+    flex: 1;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px 0;
+}
+
+/* --- الفوتر (Footer) --- */
+.footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 20px;
+    background-color: #343a40;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.footer a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+    color: #ffffff;
+}
+
+/* --- حاوية النموذج (Form Container) --- */
+.form-container {
+    max-width: 500px;
+    width: 100%;
+    margin: 30px auto;
+    padding: 30px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    direction: rtl;
+}
+
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.form-container .form-floating {
+    margin-bottom: 15px;
+}
+
+.form-container .form-floating input,
+.form-container .form-floating textarea {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+}
+
+.form-container .form-floating input:focus,
+.form-container .form-floating textarea:focus {
+    background-color: #ffffff;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+}
+
+.form-container button {
+    width: 100%;
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.form-container button:hover {
+    background-color: #0056b3;
+}
+
+/* --- تحسينات للشاشات الصغيرة --- */
+@media (max-width: 576px) {
+    .form-container {
+        margin: 15px 15px;
+        padding: 20px;
+    }
+
+    .footer {
+        padding: 15px;
+        font-size: 0.85rem;
+    }
+
+    body {
+        font-size: 14px;
+    }
+}
+
+/* --- تنسيق خاص لعناصر الإدخال في الشات --- */
+.input-group {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.input-group .form-control {
+    border: none;
+    padding: 12px;
+}
+
+.input-group .btn {
+    padding: 12px 20px;
+    border: none;
+}
+
+/* --- تنسيق عام للأزرار --- */
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* --- تنسيق عام للتنبيهات --- */
+.alert {
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+/* --- دعم RTL للعناصر --- */
+.text-end {
+    text-align: right !important;
+}
+
+.text-start {
+    text-align: left !important;
+}

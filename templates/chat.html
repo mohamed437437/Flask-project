@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="text-center mb-4">💬 شات لغة الإشارة الذكي</h2>
+    <p class="text-center text-muted mb-4">أدخل نص، أو سجّل فيديو أو صوت — وسنوفر لك الإشارة</p>
+
+    <!-- تبويبات المدخلات -->
+    <ul class="nav nav-tabs mb-3" id="inputTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button">
+                📝 نص
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="voice-tab" data-bs-toggle="tab" data-bs-target="#voice" type="button">
+                🎙️ صوت
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button">
+                🎥 فيديو
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="inputTabsContent">
+        <!-- إدخال نص -->
+        <div class="tab-pane fade show active" id="text" role="tabpanel">
+            <div class="d-flex mb-3">
+                <input type="text" id="textInput" class="form-control me-2" placeholder="اكتب جملة بالإنجليزي" dir="auto">
+                <button onclick="processText()" class="btn btn-primary">إرسال</button>
+            </div>
+        </div>
+
+        <!-- تسجيل صوت -->
+        <div class="tab-pane fade" id="voice" role="tabpanel">
+            <div class="text-center mb-3">
+                <button id="startVoiceBtn" class="btn btn-secondary" onclick="startVoice()">
+                    ابدأ التسجيل الصوتي
+                </button>
+                <button id="stopVoiceBtn" class="btn btn-danger d-none" onclick="stopVoice()">
+                    إيقاف التسجيل
+                </button>
+            </div>
+            <div class="alert alert-info d-none" id="voiceStatus">جاري التسجيل...</div>
+        </div>
+
+        <!-- تسجيل فيديو -->
+        <div class="tab-pane fade" id="camera" role="tabpanel">
+            <div class="text-center mb-3">
+                <button id="startCameraBtn" class="btn btn-success" onclick="startCamera()">
+                    ابدأ التسجيل بالكاميرا
+                </button>
+                <button id="stopCameraBtn" class="btn btn-danger d-none" onclick="stopCamera()">
+                    إيقاف
+                </button>
+            </div>
+            <div class="text-center mb-3">
+                <video id="video" width="320" height="240" autoplay class="border rounded" style="max-width: 100%;"></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الشات -->
+    <div id="chatBox" class="border rounded p-3 bg-light" style="height: 400px; overflow-y: auto;">
+        <div class="text-center text-muted">ابدأ المحادثة...</div>
+    </div>
+</div>
+
+<script>
+// --- تأكد من تحميل الصفحة بالكامل ---
+document.addEventListener('DOMContentLoaded', function () {
+    // --- المتغيرات ---
+    let mediaRecorder;
+    let audioChunks = [];
+    let videoStream = null;
+    let captureInterval = null;
+    const synth = window.speechSynthesis;
+
+    // --- 1. معالجة النص ---
+    window.processText = function () {
+        const input = document.getElementById('textInput');
+        const text = input?.value.trim();
+        if (!text) return;
+        processInput(text);
+        if (input) input.value = '';
+    };
+
+    // --- 2. تسجيل الصوت ---
+    window.startVoice = async function () {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                sendAudioToAI(audioBlob);
+            };
+
+            mediaRecorder.start();
+            const startBtn = document.getElementById('startVoiceBtn');
+            const stopBtn = document.getElementById('stopVoiceBtn');
+            const status = document.getElementById('voiceStatus');
+
+            if (startBtn) startBtn.classList.add('d-none');
+            if (stopBtn) stopBtn.classList.remove('d-none');
+            if (status) status.classList.remove('d-none');
+        } catch (err) {
+            alert("فشل في الوصول للميكروفون: " + (err.message || "تحقق من الصلاحيات"));
+        }
+    };
+
+    window.stopVoice = function () {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
+        const tracks = mediaRecorder?.stream?.getTracks() || [];
+        tracks.forEach(track => track.stop());
+
+        const startBtn = document.getElementById('startVoiceBtn');
+        const stopBtn = document.getElementById('stopVoiceBtn');
+        const status = document.getElementById('voiceStatus');
+
+        if (startBtn) startBtn.classList.remove('d-none');
+        if (stopBtn) stopBtn.classList.add('d-none');
+        if (status) status.classList.add('d-none');
+    };
+
+    function sendAudioToAI(audioBlob) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            fetch('/api/ai-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ audio: reader.result })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.text) {
+                    processInput(data.text);
+                }
+            })
+            .catch(() => {
+                processInput("فشل في تحليل الصوت.");
+            });
+        };
+        reader.readAsDataURL(audioBlob);
+    }
+
+    // --- 3. تسجيل الفيديو ---
+    window.startCamera = async function () {
+        const startBtn = document.getElementById('startCameraBtn');
+        const stopBtn = document.getElementById('stopCameraBtn');
+        const video = document.getElementById('video');
+
+        if (!startBtn || !stopBtn || !video) {
+            console.error("❌ لم يتم العثور على عناصر الكاميرا");
+            alert("الصفحة غير مكتملة: تأكد من تحميل جميع العناصر");
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            videoStream = stream;
+
+            // انتظر حتى يبدأ الفيديو في التدفق
+            video.onloadeddata = () => {
+                console.log("الفيديو جاهز للرسم");
+            };
+
+            startBtn.classList.add('d-none');
+            stopBtn.classList.remove('d-none');
+
+            if (captureInterval) clearInterval(captureInterval);
+            captureInterval = setInterval(captureAndSendFrame, 2000);
+        } catch (err) {
+            alert("فشل في الوصول للكاميرا: " + err.message);
+        }
+    };
+
+    window.stopCamera = function () {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            const video = document.getElementById('video');
+            if (video) video.srcObject = null;
+            videoStream = null;
+        }
+        if (captureInterval) {
+            clearInterval(captureInterval);
+            captureInterval = null;
+        }
+
+        const startBtn = document.getElementById('startCameraBtn');
+        const stopBtn = document.getElementById('stopCameraBtn');
+
+        if (startBtn) startBtn.classList.remove('d-none');
+        if (stopBtn) stopBtn.classList.add('d-none');
+    };
+
+    function captureAndSendFrame() {
+        const video = document.getElementById('video');
+        if (!video || !video.srcObject || video.readyState < 2) {
+            console.warn("الفيديو غير جاهز بعد");
+            return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 224;
+        canvas.height = 224;
+        const ctx = canvas.getContext('2d');
+
+        // اجعل الخلفية بيضاء (تجنب الشفافية)
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        fetch('/api/ai-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: imageData })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.text) {
+                processInput(data.text);
+            }
+        })
+        .catch(() => {
+            processInput("فشل في تحليل الحركة.");
+        });
+    }
+
+    // --- 4. معالجة المدخل (نص → إشارة) ---
+    function processInput(text) {
+        addMessage(text, 'user');
+        readTextAloud(text);
+
+        fetch('/api/ai-sign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.video_url) {
+                showSignVideo(text, data.video_url);
+            }
+        })
+        .catch(() => {
+            addMessage("لا يمكن عرض الإشارة الآن.", 'system');
+        });
+    }
+
+    // --- 5. عرض الرسائل ---
+    function addMessage(text, sender) {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = sender === 'user' ? 'd-flex justify-content-end mb-2' : 'd-flex justify-content-start mb-2';
+
+        const msg = document.createElement('div');
+        msg.className = sender === 'user'
+            ? 'bg-primary text-white rounded-pill px-3 py-2 d-inline-block'
+            : 'bg-light text-dark rounded px-3 py-2 d-inline-block';
+        msg.textContent = text;
+
+        messageDiv.appendChild(msg);
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showSignVideo(label, videoUrl) {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'd-flex flex-column align-items-start mb-3';
+
+        const labelSpan = document.createElement('small');
+        labelSpan.className = 'text-muted mb-1';
+        labelSpan.textContent = `إشارة: ${label}`;
+        messageDiv.appendChild(labelSpan);
+
+        const video = document.createElement('video');
+        video.src = videoUrl;
+        video.controls = true;
+        video.style.width = '220px';
+        video.style.borderRadius = '8px';
+        video.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+
+        messageDiv.appendChild(video);
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // --- 6. قراءة النص صوتيًا ---
+    function readTextAloud(text) {
+        if (synth.speaking) synth.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.rate = 0.9;
+        utter.pitch = 1;
+        synth.speak(utter);
+    }
+});
+</script>
+{% endblock %}

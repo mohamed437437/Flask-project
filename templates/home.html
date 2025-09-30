@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5">🤟 تعلم لغة الإشارة (ASL)</h1>
+    <p class="text-center text-muted mb-5">دليل تفاعلي لتعلم أساسيات لغة الإشارة الأمريكية</p>
+
+    <!-- الحروف الأبجدية - تصميم أفقي -->
+    <section class="mb-5 text-end">
+        <h2>🔤 الحروف الأبجدية</h2>
+        <p class="text-muted">مرر لليسار لرؤية جميع الحروف.</p>
+
+        <div class="d-flex gap-3 p-3 bg-light rounded overflow-x-auto" style="scrollbar-width: thin;">
+            {% for letter in asl_alphabet %}
+            <a href="{{ url_for('letter_detail', letter=letter) }}" class="text-decoration-none flex-shrink-0" style="width: 140px;">
+                <div class="card h-100 border-primary shadow-sm" style="cursor: pointer;">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <!-- الحرف داخل دائرة -->
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-2"
+                             style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">
+                            {{ letter }}
+                        </div>
+                        <!-- صورة الإشارة -->
+                        <img src="{{ url_for('static', filename='images/asl_letters/' + letter + '.jpg') }}"
+                             alt="إشارة الحرف {{ letter }}"
+                             class="img-fluid rounded mb-2"
+                             style="height: 90px; object-fit: cover; border: 2px solid #dee2e6;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.jpg') }}';">
+                        <small class="text-muted">عرض الدرس</small>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- الأرقام 1-10 - تصميم أفقي -->
+    <section class="mb-5 text-end">
+        <h2>🔢 الأرقام (1-10)</h2>
+        <p class="text-muted">مرر لليسار لرؤية الأرقام.</p>
+
+        <div class="d-flex gap-3 p-3 bg-light rounded overflow-x-auto" style="scrollbar-width: thin;">
+            {% for num in asl_numbers %}
+            <a href="{{ url_for('number_detail', num=num) }}" class="text-decoration-none flex-shrink-0" style="width: 140px;">
+                <div class="card h-100 border-success shadow-sm" style="cursor: pointer;">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <!-- الرقم داخل دائرة -->
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center mb-2"
+                             style="width: 70px; height: 70px; font-size: 1.8rem; font-weight: bold;">
+                            {{ num }}
+                        </div>
+                        <!-- صورة إشارة الرقم -->
+                        <img src="{{ url_for('static', filename='images/asl_numbers/' + num + '.jpg') }}"
+                             alt="إشارة الرقم {{ num }}"
+                             class="img-fluid rounded mb-2"
+                             style="height: 90px; object-fit: cover; border: 2px solid #dee2e6;"
+                             onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.jpg') }}';">
+                        <small class="text-muted">عرض الدرس</small>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- التحيات -->
+    <section class="mb-5 text-end">
+        <h2>💬 عبارات شائعة</h2>
+        <div class="row g-3 mt-3">
+            {% for phrase in asl_greetings %}
+            <div class="col-12 col-md-6">
+                <a href="{{ url_for('phrase_detail', phrase=phrase) }}" class="text-decoration-none">
+                    <div class="card border-warning h-100" style="cursor: pointer;">
+                        <div class="card-body text-center">
+                            <h5>{{ phrase }}</h5>
+                            <img src="{{ url_for('static', filename='images/asl_phrases/' + phrase.replace(' ', '_') + '.jpg') }}"
+                                 alt="إشارة لعبارة {{ phrase }}"
+                                 class="img-fluid rounded mb-2"
+                                 style="height: 100px; object-fit: cover;"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.jpg') }}';">
+                            <div class="mt-2">
+                                <span class="btn btn-sm btn-outline-warning">عرض الدرس</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- أيام الأسبوع -->
+    <section class="mb-5 text-end">
+        <h2>📅 أيام الأسبوع</h2>
+        <div class="row g-3 mt-3">
+            {% for day in asl_days %}
+            <div class="col-6 col-md-3">
+                <a href="{{ url_for('day_detail', day=day) }}" class="text-decoration-none">
+                    <div class="card border-info text-center h-100" style="cursor: pointer;">
+                        <div class="card-body">
+                            <h5 class="text-info">{{ day }}</h5>
+                            <img src="{{ url_for('static', filename='images/asl_days/' + day + '.jpg') }}"
+                                 alt="إشارة ليوم {{ day }}"
+                                 class="img-fluid rounded mb-2"
+                                 style="height: 100px; object-fit: cover;"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.jpg') }}';">
+                            <div class="mt-2">
+                                <span class="btn btn-sm btn-outline-info">تعلم الإشارة</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

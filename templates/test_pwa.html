@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تجربة PWA</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='pwa/manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='pwa/icon-192x192.png') }}">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+
+    <h1 style="text-align:center; margin-top:50px;">🎉 تجربة PWA</h1>
+    <p style="text-align:center;">إذا ظهر الزر في الأسفل، فـ PWA شغال!</p>
+
+    <!-- زر التثبيت -->
+    <button id="installBtn" style="
+        display:none;
+        position:fixed;
+        bottom:20px;
+        left:50%;
+        transform:translateX(-50%);
+        background:#4CAF50;
+        color:white;
+        border:none;
+        padding:15px 30px;
+        border-radius:8px;
+        font-size:16px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.2);
+        z-index:1000;
+    ">ثبت التطبيق 📲</button>
+
+    <script>
+        let deferredPrompt;
+
+        // تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/pwa/service-worker.js')
+                    .then(reg => console.log('✅ SW مسجل:', reg.scope))
+                    .catch(err => console.log('❌ فشل:', err));
+            });
+        }
+
+        // التقاط حدث التثبيت
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'block';
+            console.log('🎉 beforeinstallprompt: تم الإطلاق!');
+        });
+
+        // تفعيل التثبيت
+        document.getElementById('installBtn')?.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('✅ تم التثبيت');
+                    } else {
+                        console.log('❌ تم الرفض');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installBtn').style.display = 'none';
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
