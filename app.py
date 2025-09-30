@@ -76,31 +76,41 @@ def load_user(user_id):
 
 
 class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[
-        DataRequired(), Length(min=4, max=25)
-    ])
-    email = StringField('Email', validators=[
-        DataRequired(), Email()
-    ])
-    password = PasswordField('Password', validators=[
-        DataRequired(), Length(min=6)
-    ])
-    confirm_password = PasswordField('Confirm Password', validators=[
-        DataRequired(), EqualTo('password')
-    ])
-    submit = SubmitField('Register')
+    username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Sign Up')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError("Username already exists. Please choose a different one.")
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError("Email already exists. Please choose a different one.")
+
+
+class UpdateAccountForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    picture = FileField('Update Profile Picture')
+    submit = SubmitField('Update')
 
     def validate_username(self, username):
         if username.data != current_user.username:
-            stmt = db.select(User).filter_by(username=username.data)
-            if db.session.execute(stmt).scalar():
-                raise ValidationError('Username already taken.')
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError("Username already taken.")
 
     def validate_email(self, email):
         if email.data != current_user.email:
-            stmt = db.select(User).filter_by(email=email.data)
-            if db.session.execute(stmt).scalar():
-                raise ValidationError('Email already registered.')
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError("Email already taken.")
+
 
 
 class LoginForm(FlaskForm):
